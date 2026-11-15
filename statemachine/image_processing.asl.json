@@ -1,0 +1,43 @@
+{
+  "Comment": "Resizes an image with Lambda, then goes to Success or Fail based on the result",
+  "StartAt": "ResizeImage",
+  "States": {
+    "ResizeImage": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:009001721109:function:resize-image",
+        "Payload.$": "$"
+      },
+      "OutputPath": "$.Payload",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "ResizeFailed"
+        }
+      ],
+      "Next": "CheckResizeResult"
+    },
+    "CheckResizeResult": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.status",
+          "StringEquals": "SUCCESS",
+          "Next": "ResizeSucceeded"
+        }
+      ],
+      "Default": "ResizeFailed"
+    },
+    "ResizeSucceeded": {
+      "Type": "Succeed"
+    },
+    "ResizeFailed": {
+      "Type": "Fail",
+      "Error": "ImageResizeFailed",
+      "Cause": "The resize Lambda returned FAILED or crashed. Check its CloudWatch logs."
+    }
+  }
+}
